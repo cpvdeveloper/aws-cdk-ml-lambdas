@@ -1,0 +1,16 @@
+{
+  "name": "lambda-aws-ml",
+  "version": "1.0.0",
+  "description": "Lambdas to perform AWS ML operations",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "*",
+    "@types/uuid": "*"
+  },
+  "dependencies": {
+    "aws-sdk": "*",
+    "@aws-sdk/client-translate": "*",
+    "uuid": "*"
+  }
+}
