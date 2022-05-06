@@ -9,8 +9,9 @@
     "@types/uuid": "*"
   },
   "dependencies": {
-    "aws-sdk": "*",
+    "@aws-sdk/client-comprehend": "^3.85.0",
     "@aws-sdk/client-translate": "*",
+    "aws-sdk": "*",
     "uuid": "*"
   }
 }

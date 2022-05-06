@@ -30,13 +30,27 @@ export class AwsMlLambdasStack extends Stack {
       ...nodeJsFunctionProps,
     });
 
+    const detectSentimentLambda = new NodejsFunction(this, "detectSentiment", {
+      entry: join(lambdasDirectory, "comprehend", "sentiment.ts"),
+      ...nodeJsFunctionProps,
+    });
+
     const translateTextIntegration = new LambdaIntegration(translateTextLambda);
+    const detectSentimentIntegration = new LambdaIntegration(
+      detectSentimentLambda
+    );
 
     const api = new RestApi(this, "awsMlApi", {
       restApiName: "AWS ML Service",
     });
 
-    const items = api.root.addResource("translations");
-    items.addMethod("POST", translateTextIntegration);
+    api.root
+      .addResource("translate")
+      .addMethod("POST", translateTextIntegration);
+
+    api.root
+      .addResource("comprehend")
+      .addResource("sentiment")
+      .addMethod("POST", detectSentimentIntegration);
   }
 }
