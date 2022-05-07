@@ -75,8 +75,27 @@ export class AwsMlLambdasStack extends Stack {
       })
     );
 
+    // PII detection lambda
+    const detectPiiLambda = new NodejsFunction(
+      this,
+      `${deploymentEnvironment}-detectPii`,
+      {
+        entry: join(lambdasDirectory, "comprehend", "contains-pii.ts"),
+        ...nodeJsFunctionProps,
+      }
+    );
+    const detectPiiPolicy = new PolicyStatement({
+      actions: ["comprehend:ContainsPiiEntities"],
+      resources: ["*"],
+    });
+    detectPiiLambda.role?.attachInlinePolicy(
+      new Policy(this, "detect-pii-policy", {
+        statements: [detectPiiPolicy],
+      })
+    );
+
     // Create an API Gateway
-    const api = new RestApi(this, `${deploymentEnvironment}-awsMlApi`, {
+    const api = new RestApi(this, "awsMlApi", {
       restApiName: "AWS ML Service",
       deployOptions: {
         stageName: deploymentEnvironment,
@@ -87,14 +106,18 @@ export class AwsMlLambdasStack extends Stack {
     const detectSentimentIntegration = new LambdaIntegration(
       detectSentimentLambda
     );
+    const detectPiiIntegration = new LambdaIntegration(detectPiiLambda);
 
     api.root
       .addResource("translate")
       .addMethod("POST", translateTextIntegration);
 
-    api.root
-      .addResource("comprehend")
+    const comprehendResource = api.root.addResource("comprehend");
+    comprehendResource
       .addResource("sentiment")
       .addMethod("POST", detectSentimentIntegration);
+    comprehendResource
+      .addResource("contains-pii")
+      .addMethod("POST", detectPiiIntegration);
   }
 }
