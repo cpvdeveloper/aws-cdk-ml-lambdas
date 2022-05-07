@@ -9,6 +9,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
+    "deploy:staging": "cdk deploy --context stage=staging",
+    "deploy:prod": "cdk deploy --context stage=prod",
     "postinstall": "(cd lambdas && npm install);"
   },
   "devDependencies": {
