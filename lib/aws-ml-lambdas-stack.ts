@@ -96,7 +96,9 @@ export class AwsMlLambdasStack extends Stack {
 
     // Create an API Gateway
     const api = new RestApi(this, "awsMlApi", {
-      restApiName: "AWS ML Service",
+      restApiName: `AWS ML Service ${deploymentEnvironment
+        .charAt(0)
+        .toUpperCase()}${deploymentEnvironment.slice(1)}`,
       deployOptions: {
         stageName: deploymentEnvironment,
       },
