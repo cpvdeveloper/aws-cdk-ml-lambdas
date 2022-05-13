@@ -1,13 +1,6 @@
 import { Stack, StackProps } from "aws-cdk-lib";
-import { PolicyStatement, Policy } from "aws-cdk-lib/aws-iam";
 import { RestApi, LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
-import {
-  NodejsFunction,
-  NodejsFunctionProps,
-} from "aws-cdk-lib/aws-lambda-nodejs";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
-import { join } from "path";
 import type { DeploymentEnvironmentProps } from "../types";
 import { LambdaStack } from "./lambda-stack";
 
@@ -15,106 +8,66 @@ interface AwsMlLambdasStackProps
   extends StackProps,
     DeploymentEnvironmentProps {}
 
+/**
+ * Deploys an API Gateway with multiple endpoints served by Lambda functions.
+ */
 export class AwsMlLambdasStack extends Stack {
   constructor(scope: Construct, id: string, props?: AwsMlLambdasStackProps) {
     super(scope, id, props);
 
-    const lambdasDirectory = join(__dirname, "..", "lambdas");
     const deploymentEnvironment = props?.deploymentEnvironment || "staging";
 
-    // Base props for all lambdas
-    const nodeJsFunctionProps: NodejsFunctionProps = {
-      bundling: {
-        externalModules: ["aws-sdk"],
-      },
-      depsLockFilePath: join(lambdasDirectory, "package-lock.json"),
-      environment: {
-        AWS_REGION: process.env.AWS_REGION as string,
-      },
-      runtime: Runtime.NODEJS_14_X,
-    };
-
-    // Translate text lambda function
-    const translateTextLambda = new NodejsFunction(
+    const { lambdaFunction: translateTextLambda } = new LambdaStack(
       this,
-      `${deploymentEnvironment}-translateText`,
+      "translateTextLambdaStack",
       {
-        entry: join(lambdasDirectory, "translate", "index.ts"),
-        ...nodeJsFunctionProps,
+        deploymentEnvironment,
+        lambdaFilePath: "translate/index.ts",
+        lambdaFunctionName: "translateText",
+        policyActions: [
+          "translate:TranslateText",
+          "comprehend:DetectDominantLanguage",
+        ],
+        policyName: "translate-text-policy",
       }
     );
-    const translateTextPolicy = new PolicyStatement({
-      actions: ["translate:TranslateText"],
-      resources: ["*"],
-    });
-    const detectLanguagePolicy = new PolicyStatement({
-      actions: ["comprehend:DetectDominantLanguage"],
-      resources: ["*"],
-    });
-    translateTextLambda.role?.attachInlinePolicy(
-      new Policy(this, "translate-text-policy", {
-        statements: [detectLanguagePolicy, translateTextPolicy],
-      })
-    );
 
-    // Sentiment detection lambda
-    const detectSentimentLambda = new NodejsFunction(
+    const { lambdaFunction: detectSentimentLambda } = new LambdaStack(
       this,
-      `${deploymentEnvironment}-detectSentiment`,
+      "detectSentimentLambdaStack",
       {
-        entry: join(lambdasDirectory, "comprehend", "sentiment.ts"),
-        ...nodeJsFunctionProps,
+        deploymentEnvironment,
+        lambdaFilePath: "comprehend/sentiment.ts",
+        lambdaFunctionName: "detectSentiment",
+        policyActions: ["comprehend:DetectSentiment"],
+        policyName: "detect-sentiment-policy",
       }
     );
-    const detectSentimentPolicy = new PolicyStatement({
-      actions: ["comprehend:DetectSentiment"],
-      resources: ["*"],
-    });
-    detectSentimentLambda.role?.attachInlinePolicy(
-      new Policy(this, "detect-sentiment-policy", {
-        statements: [detectSentimentPolicy],
-      })
-    );
 
-    // PII detection lambda
-    const detectPiiLambda = new NodejsFunction(
+    const { lambdaFunction: detectPiiLambda } = new LambdaStack(
       this,
-      `${deploymentEnvironment}-detectPii`,
+      "detectPiiLambdaStack",
       {
-        entry: join(lambdasDirectory, "comprehend", "contains-pii.ts"),
-        ...nodeJsFunctionProps,
+        deploymentEnvironment,
+        lambdaFilePath: "comprehend/contains-pii.ts",
+        lambdaFunctionName: "detectPii",
+        policyActions: ["comprehend:ContainsPiiEntities"],
+        policyName: "detect-pii-policy",
       }
     );
-    const detectPiiPolicy = new PolicyStatement({
-      actions: ["comprehend:ContainsPiiEntities"],
-      resources: ["*"],
-    });
-    detectPiiLambda.role?.attachInlinePolicy(
-      new Policy(this, "detect-pii-policy", {
-        statements: [detectPiiPolicy],
-      })
-    );
 
-    // Entities detection lambda
-    const detectEntitiesLambda = new NodejsFunction(
+    const { lambdaFunction: detectEntitiesLambda } = new LambdaStack(
       this,
-      `${deploymentEnvironment}-detectEntities`,
+      "detectEntitiesLambdaStack",
       {
-        entry: join(lambdasDirectory, "comprehend", "detect-entities.ts"),
-        ...nodeJsFunctionProps,
+        deploymentEnvironment,
+        lambdaFilePath: "comprehend/detect-entities.ts",
+        lambdaFunctionName: "detectEntities",
+        policyActions: ["comprehend:DetectEntities"],
+        policyName: "detect-entities-policy",
       }
     );
-    const detectEntitiesPolicy = new PolicyStatement({
-      actions: ["comprehend:DetectEntities"],
-      resources: ["*"],
-    });
-    detectEntitiesLambda.role?.attachInlinePolicy(
-      new Policy(this, "detect-entities-policy", {
-        statements: [detectEntitiesPolicy],
-      })
-    );
 
-    // Key phrases detection lambda
     const { lambdaFunction: detectKeyPhrasesLambda } = new LambdaStack(
       this,
       "keyPhrasesLambdaStack",
@@ -158,7 +111,7 @@ export class AwsMlLambdasStack extends Stack {
       .addResource("sentiment")
       .addMethod("POST", detectSentimentIntegration);
     comprehendResource
-      .addResource("contains-pii")
+      .addResource("detect-pii")
       .addMethod("POST", detectPiiIntegration);
     comprehendResource
       .addResource("detect-entities")

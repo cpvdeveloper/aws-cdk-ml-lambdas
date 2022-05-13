@@ -16,6 +16,9 @@ interface LambdasStackProps extends StackProps, DeploymentEnvironmentProps {
   policyName: string;
 }
 
+/**
+ * Deploys a Lambda function with with permissions.
+ */
 export class LambdaStack extends Construct {
   public readonly nodeJsFunctionProps: NodejsFunctionProps;
   public readonly lambdasDirectory: string;
