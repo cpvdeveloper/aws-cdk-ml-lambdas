@@ -9,6 +9,7 @@ import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { join } from "path";
 import type { DeploymentEnvironmentProps } from "../types";
+import { LambdaStack } from "./lambda-stack";
 
 interface AwsMlLambdasStackProps
   extends StackProps,
@@ -113,6 +114,19 @@ export class AwsMlLambdasStack extends Stack {
       })
     );
 
+    // Key phrases detection lambda
+    const { lambdaFunction: detectKeyPhrasesLambda } = new LambdaStack(
+      this,
+      "keyPhrasesLambdaStack",
+      {
+        deploymentEnvironment,
+        lambdaFilePath: "comprehend/detect-key-phrases.ts",
+        lambdaFunctionName: "detectKeyPhrases",
+        policyActions: ["comprehend:DetectKeyPhrases"],
+        policyName: "detect-key-phrases-policy",
+      }
+    );
+
     // Create an API Gateway
     const api = new RestApi(this, "awsMlApi", {
       restApiName: `AWS ML Service ${deploymentEnvironment
@@ -131,6 +145,9 @@ export class AwsMlLambdasStack extends Stack {
     const detectEntitiesIntegration = new LambdaIntegration(
       detectEntitiesLambda
     );
+    const detectKeyPhrasesIntegration = new LambdaIntegration(
+      detectKeyPhrasesLambda
+    );
 
     api.root
       .addResource("translate")
@@ -146,5 +163,8 @@ export class AwsMlLambdasStack extends Stack {
     comprehendResource
       .addResource("detect-entities")
       .addMethod("POST", detectEntitiesIntegration);
+    comprehendResource
+      .addResource("detect-key-phrases")
+      .addMethod("POST", detectKeyPhrasesIntegration);
   }
 }
