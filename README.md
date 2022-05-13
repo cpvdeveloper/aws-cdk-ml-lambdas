@@ -3,9 +3,10 @@
 ### APIs available:
 
 1. AWS Translate - translate text with automatic source language detection
-2. AWS Comprehend - determine the sentiment of text
-3. AWS Comprehend - detect [Personally Identifiable Information (PII) entities](<(https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html)>) within text
+2. AWS Comprehend - determine the [sentiment](https://docs.aws.amazon.com/comprehend/latest/dg/how-sentiment.html) of text
+3. AWS Comprehend - detect [Personally Identifiable Information (PII) entities](https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html) within text
 4. AWS Comprehend - detect [entities](https://docs.aws.amazon.com/comprehend/latest/dg/API_Entity.html) within text
+5. AWS Comprehend - detect [key phrases](https://docs.aws.amazon.com/comprehend/latest/dg/how-key-phrases.html) within text
 
 ### Useful commands:
 
