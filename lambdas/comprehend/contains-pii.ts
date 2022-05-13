@@ -3,6 +3,7 @@ import {
   ContainsPiiEntitiesCommand,
 } from "@aws-sdk/client-comprehend";
 import { ProxyHandler } from "aws-lambda";
+import { errorResponse, dataResponse } from "../utils";
 
 const client = new ComprehendClient({
   region: process.env.AWS_REGION,
@@ -14,15 +15,9 @@ export const handler: ProxyHandler = async (event) => {
     const sourceText = eventBody?.text;
 
     if (!sourceText) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          data: null,
-          error: {
-            message: "Missing source text.",
-          },
-        }),
-      };
+      return errorResponse({
+        message: "Missing source text.",
+      });
     }
 
     const command = new ContainsPiiEntitiesCommand({
@@ -30,22 +25,10 @@ export const handler: ProxyHandler = async (event) => {
       LanguageCode: "en",
     });
     const { Labels } = await client.send(command);
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        data: {
-          Labels,
-        },
-        error: null,
-      }),
-    };
+    return dataResponse({
+      Labels,
+    });
   } catch (error) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        data: null,
-        error,
-      }),
-    };
+    return errorResponse(error);
   }
 };
