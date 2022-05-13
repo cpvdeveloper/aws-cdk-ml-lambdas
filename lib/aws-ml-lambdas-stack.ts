@@ -94,6 +94,25 @@ export class AwsMlLambdasStack extends Stack {
       })
     );
 
+    // Entities detection lambda
+    const detectEntitiesLambda = new NodejsFunction(
+      this,
+      `${deploymentEnvironment}-detectEntities`,
+      {
+        entry: join(lambdasDirectory, "comprehend", "detect-entities.ts"),
+        ...nodeJsFunctionProps,
+      }
+    );
+    const detectEntitiesPolicy = new PolicyStatement({
+      actions: ["comprehend:DetectEntities"],
+      resources: ["*"],
+    });
+    detectEntitiesLambda.role?.attachInlinePolicy(
+      new Policy(this, "detect-entities-policy", {
+        statements: [detectEntitiesPolicy],
+      })
+    );
+
     // Create an API Gateway
     const api = new RestApi(this, "awsMlApi", {
       restApiName: `AWS ML Service ${deploymentEnvironment
@@ -109,6 +128,9 @@ export class AwsMlLambdasStack extends Stack {
       detectSentimentLambda
     );
     const detectPiiIntegration = new LambdaIntegration(detectPiiLambda);
+    const detectEntitiesIntegration = new LambdaIntegration(
+      detectEntitiesLambda
+    );
 
     api.root
       .addResource("translate")
@@ -121,5 +143,8 @@ export class AwsMlLambdasStack extends Stack {
     comprehendResource
       .addResource("contains-pii")
       .addMethod("POST", detectPiiIntegration);
+    comprehendResource
+      .addResource("detect-entities")
+      .addMethod("POST", detectEntitiesIntegration);
   }
 }
